@@ -3,3 +3,4 @@
 .ropeproject/
 *.ipynb
 *.pyc
+.idea/*
