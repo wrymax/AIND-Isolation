@@ -86,7 +86,7 @@ class CustomPlayer:
         self.iterative = iterative
         self.score = score_fn
         self.method = method
-        self.time_left = None #lambda: 100
+        self.time_left = None
         self.TIMER_THRESHOLD = timeout
 
     def get_move(self, game, legal_moves, time_left):
@@ -144,14 +144,24 @@ class CustomPlayer:
                 return (-1, -1)
 
             # temply set depth = 1, to comment this line later!!!
-            self.search_depth = 1
+            if self.iterative:
+                depth = 1
+            else:
+                depth = self.search_depth
             
-            _, next_move = self.minimax(game, self.search_depth)
-            print("\n-- Next move is: {}".format(next_move))
+            while True:
+                if self.method == 'minimax':
+                    _, next_move = self.minimax(game, depth)
+                elif self.method == 'alphabeta':
+                    _, next_move = self.minimax(game, depth)
+                
+                if not self.iterative:
+                    break
+                depth += 1
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
-            pass
+            print("-- Time is out! the depth = {}".format(depth))
 
         # Return the best move from the last completed search iteration
         return next_move
@@ -187,56 +197,40 @@ class CustomPlayer:
                 to pass the project unit tests; you cannot call any other
                 evaluation function directly.
         """
-        # temply commented
-        # if self.time_left() < self.TIMER_THRESHOLD:
-        #     raise Timeout()
+        
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise Timeout()
 
         # TODO: finish this function!
-        # print("== current palyer: {}".format(game.active_player))
 
         # current legal moves
         legal_moves = game.get_legal_moves()
-
-        # current player location
-        location = game.get_player_location(game.active_player)
-        # print("depth = {}".format(depth))
-        # print("current location: {}".format(location))
-
-        # print("\n")
-        # print(game.print_board())
+        
+        # initialize a best_move
+        best_move = None
+        
         if depth == 0 or len(legal_moves) == 0:
-            # print('no more children!!!')
-            score = self.score(game, game.active_player)
-            return [score, location]
+            return self.score(game, self), None
         if maximizing_player:
             best_value = float("-inf")
 
             for child in legal_moves:
                 # print('max: going deeper..')
-                v = self.minimax(game.forecast_move(child), depth - 1, False)
+                value, _next_move = self.minimax(game.forecast_move(child), depth - 1, False)
                 # best_value = max(best_value, v[0])
-                if best_value < v[0]:
-                    best_value = v[0]
-                    location = v[1]
+                if best_value < value:
+                    best_value, best_move = value, child
 
-                # print("- max: b_v = " + str(best_value))
-            return [best_value, location]
+            return [best_value, best_move]
         else:
             best_value = float("inf")
 
             for child in legal_moves:
-                # print('min: going deeper..')
-                v = self.minimax(game.forecast_move(child), depth - 1, True)
-                # best_value = min(best_value, v)
-                if best_value > v[0]:
-                    best_value = v[0]
-                    location = v[1]
+                value, _next_move = self.minimax(game.forecast_move(child), depth - 1, True)
+                if best_value > value:
+                    best_value, best_move = value, child
 
-                # print("- min: b_v = " + str(best_value))
-            return [best_value, location]
-
-
-        # _, move = max([(self.score(game.forecast_move(m), self), m) for m in legal_moves])
+            return best_value, best_move
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
