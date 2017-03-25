@@ -126,9 +126,7 @@ class CustomPlayer:
         """
 
         self.time_left = time_left
-
-        # TODO: finish this function!
-
+        
         # Perform any required initializations, including selecting an initial
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
@@ -143,25 +141,30 @@ class CustomPlayer:
                 print("== move not legal! ==")
                 return (-1, -1)
 
-            # temply set depth = 1, to comment this line later!!!
+            # config depth with iterative property
             if self.iterative:
                 depth = 1
             else:
                 depth = self.search_depth
             
+            # use different algorithms
             while True:
                 if self.method == 'minimax':
                     _, next_move = self.minimax(game, depth)
                 elif self.method == 'alphabeta':
                     _, next_move = self.minimax(game, depth)
                 
+                # go once if not iterative deepening
                 if not self.iterative:
                     break
+                
+                # go deeper, until timeout triggered
                 depth += 1
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
-            print("-- Time is out! the depth = {}".format(depth))
+            # print("-- Time is out! the depth = {}".format(depth))
+            pass
 
         # Return the best move from the last completed search iteration
         return next_move
@@ -200,8 +203,6 @@ class CustomPlayer:
         
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
-
-        # TODO: finish this function!
 
         # current legal moves
         legal_moves = game.get_legal_moves()
@@ -273,5 +274,41 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        # current legal moves
+        legal_moves = game.get_legal_moves()
+
+        # initialize a best_move
+        best_move = None
+
+        if depth == 0 or not legal_moves:
+            return self.score(game, self), None
+        
+        if maximizing_player:
+            best_value = float("-inf")
+            for child_move in legal_moves:
+                next_move = game.forecast_move(child_move)
+                value, _ = self.alphabeta(next_move, depth - 1, alpha, beta, False)
+                
+                # update alpha if value is larger than current alpha
+                alpha = max(alpha, value)
+                if value > best_value:
+                    best_value, best_move = value, child_move
+
+                if alpha >= beta:
+                    break
+
+        else:
+            best_value = float("inf")
+            for child_move in legal_moves:
+                next_move = game.forecast_move(child_move)
+                value, _ = self.alphabeta(next_move, depth - 1, alpha, beta, True)
+                
+                # update beta if value is less than current beta
+                beta = min(beta, value)
+                
+                if value < best_value:
+                    best_value, best_move = value, child_move
+                if alpha >= beta:
+                    break
+
+        return best_value, best_move
