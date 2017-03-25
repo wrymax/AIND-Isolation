@@ -145,6 +145,7 @@ class Board(object):
     def get_blank_spaces(self):
         """
         Return a list of the locations that are still available on the board.
+        e.g. [(0, 0), (1, 0)]
         """
         return [(i, j) for j in range(self.width) for i in range(self.height)
             if self.__board_state__[i][j] == Board.BLANK]

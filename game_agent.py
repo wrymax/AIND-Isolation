@@ -38,7 +38,16 @@ def custom_score(game, player):
     """
 
     # TODO: finish this function!
-    raise NotImplementedError
+
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(own_moves - opp_moves)
 
 
 class CustomPlayer:
@@ -77,7 +86,7 @@ class CustomPlayer:
         self.iterative = iterative
         self.score = score_fn
         self.method = method
-        self.time_left = None
+        self.time_left = None #lambda: 100
         self.TIMER_THRESHOLD = timeout
 
     def get_move(self, game, legal_moves, time_left):
@@ -129,14 +138,23 @@ class CustomPlayer:
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            pass
+            # pass
+            if not legal_moves:
+                print("== move not legal! ==")
+                return (-1, -1)
+
+            # temply set depth = 1, to comment this line later!!!
+            self.search_depth = 1
+            
+            _, next_move = self.minimax(game, self.search_depth)
+            print("\n-- Next move is: {}".format(next_move))
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
             pass
 
         # Return the best move from the last completed search iteration
-        raise NotImplementedError
+        return next_move
 
     def minimax(self, game, depth, maximizing_player=True):
         """Implement the minimax search algorithm as described in the lectures.
@@ -169,11 +187,56 @@ class CustomPlayer:
                 to pass the project unit tests; you cannot call any other
                 evaluation function directly.
         """
-        if self.time_left() < self.TIMER_THRESHOLD:
-            raise Timeout()
+        # temply commented
+        # if self.time_left() < self.TIMER_THRESHOLD:
+        #     raise Timeout()
 
         # TODO: finish this function!
-        raise NotImplementedError
+        # print("== current palyer: {}".format(game.active_player))
+
+        # current legal moves
+        legal_moves = game.get_legal_moves()
+
+        # current player location
+        location = game.get_player_location(game.active_player)
+        # print("depth = {}".format(depth))
+        # print("current location: {}".format(location))
+
+        # print("\n")
+        # print(game.print_board())
+        if depth == 0 or len(legal_moves) == 0:
+            # print('no more children!!!')
+            score = self.score(game, game.active_player)
+            return [score, location]
+        if maximizing_player:
+            best_value = float("-inf")
+
+            for child in legal_moves:
+                # print('max: going deeper..')
+                v = self.minimax(game.forecast_move(child), depth - 1, False)
+                # best_value = max(best_value, v[0])
+                if best_value < v[0]:
+                    best_value = v[0]
+                    location = v[1]
+
+                # print("- max: b_v = " + str(best_value))
+            return [best_value, location]
+        else:
+            best_value = float("inf")
+
+            for child in legal_moves:
+                # print('min: going deeper..')
+                v = self.minimax(game.forecast_move(child), depth - 1, True)
+                # best_value = min(best_value, v)
+                if best_value > v[0]:
+                    best_value = v[0]
+                    location = v[1]
+
+                # print("- min: b_v = " + str(best_value))
+            return [best_value, location]
+
+
+        # _, move = max([(self.score(game.forecast_move(m), self), m) for m in legal_moves])
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
